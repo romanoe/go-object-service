@@ -1,0 +1,7 @@
+package: objects
+output: pkg/objects/object-server.gen.go
+additional-imports:
+    alias: .
+generate:
+  echo-server: true
+  embedded-spec: true

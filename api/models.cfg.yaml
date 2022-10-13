@@ -1,0 +1,4 @@
+package: objects
+generate:
+  models: true
+output: pkg/objects/object-models.gen.go
