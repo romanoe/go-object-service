@@ -18,6 +18,19 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Object'
+    post:
+      summary:  Add a new object
+      description: Add a new object (id, created_at, type)
+      operationId: addNewObject
+      responses:
+        200:
+          description: Object has been added
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Object'
   /objects/{id}:
     get:
       summary: Returns an object by ID
