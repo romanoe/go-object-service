@@ -2,11 +2,10 @@ package objects
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
+	"time"
 )
 
 // DB connection details
@@ -21,8 +20,9 @@ const (
 
 // SQL queries
 const (
-	getAllObjects = "SELECT * FROM object"
-	getObjectById = "SELECT * FROM object WHERE id=$1"
+	getAllObjects = "SELECT * FROM object;"
+	getObjectById = "SELECT * FROM object WHERE id=$1;"
+	createObject  = "INSERT INTO object (id, created_at, type) VALUES ($1, $2, $3);"
 )
 
 // Database
@@ -48,6 +48,7 @@ func GetAllObjects() ([]*Object, error) {
 	var objects []*Object
 
 	// Execute query and add to object
+	fmt.Printf("Executing query %s \n", getAllObjects)
 	rows, err := conn.Query(context.Background(), getAllObjects)
 
 	if err != nil {
@@ -78,20 +79,44 @@ func GetObjectById(id int64) (*Object, error) {
 	}
 
 	// Initialize object
-	var object *Object
+	var object = new(Object)
 
 	// Executing query
-	fmt.Printf("Executing query %s", getObjectById)
-
+	fmt.Printf("Executing query %s \n", getObjectById)
 	err = conn.QueryRow(context.Background(), getObjectById, id).Scan(&object.CreatedAt, &object.Type, &object.Id)
 
-	// Handling error
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Message)
-			fmt.Println(pgErr.Code)
-		}
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	return object, err
+}
+
+func CreateObject() (*Object, error) {
+	// Set connection and (defer) close
+	conn, err := SetConnection()
+	defer conn.Close()
+
+	// Initialize object
+	var object = new(Object)
+
+	// Get max id (id)
+	var maxId int64
+
+	// Date time (created_at)
+	var now time.Time
+
+	// Type (Arbre, Antenne etc.)
+	var objectType string
+
+	// Executing query
+	fmt.Printf("Executing query %s \n", createObject)
+	err = conn.QueryRow(context.Background(), createObject, maxId, now, objectType).Scan(&object.CreatedAt, &object.Type, &object.Id)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
 	}
 
 	return object, err
