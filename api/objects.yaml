@@ -23,8 +23,8 @@ paths:
       description: Add a new object (id, created_at, type)
       operationId: addNewObject
       responses:
-        200:
-          description: Object has been added
+        201:
+          description: Object has been created
           content:
             application/json:
               schema:

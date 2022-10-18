@@ -20,9 +20,10 @@ const (
 
 // SQL queries
 const (
-	getAllObjects = "SELECT * FROM object;"
-	getObjectById = "SELECT * FROM object WHERE id=$1;"
-	createObject  = "INSERT INTO object (id, created_at, type) VALUES ($1, $2, $3);"
+	getAllObjects = "SELECT * FROM objects;"
+	getObjectById = "SELECT * FROM objects WHERE id=$1;"
+	createObject  = "INSERT INTO objects (id, created_at, type) VALUES ($1, $2, $3) RETURNING id;"
+	getMaxid      = "SELECT MAX(id) FROM objects;"
 )
 
 // Database
@@ -93,31 +94,45 @@ func GetObjectById(id int64) (*Object, error) {
 	return object, err
 }
 
-func CreateObject() (*Object, error) {
+func CreateObject(o *NewObject) error {
 	// Set connection and (defer) close
 	conn, err := SetConnection()
 	defer conn.Close()
 
-	// Initialize object
-	var object = new(Object)
-
 	// Get max id (id)
-	var maxId int64
-
-	// Date time (created_at)
-	var now time.Time
-
-	// Type (Arbre, Antenne etc.)
-	var objectType string
-
-	// Executing query
-	fmt.Printf("Executing query %s \n", createObject)
-	err = conn.QueryRow(context.Background(), createObject, maxId, now, objectType).Scan(&object.CreatedAt, &object.Type, &object.Id)
+	var lastId int64
+	err = conn.QueryRow(context.Background(), getMaxid).Scan(&lastId)
+	maxId := lastId + 1
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Getting max id failed: %v\n", err)
 		os.Exit(1)
 	}
 
-	return object, err
+	// Date time (created_at)
+	now := time.Now()
+
+	// Type (Arbre, Antenne etc.)
+	if o.Type == "" {
+		o.Type = "Undefined"
+	}
+	objectType := o.Type
+
+	// Create object
+	var object = Object{
+		CreatedAt: now,
+		Id:        maxId,
+		Type:      objectType,
+	}
+
+	// Executing query
+	fmt.Printf("Executing query %s \n", createObject)
+	err = conn.QueryRow(context.Background(), createObject, &object.Id, &object.CreatedAt, &object.Type).Scan(&lastId)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Inserting new object with id %d failed: %v\n", lastId, err)
+		os.Exit(1)
+	}
+
+	return err
 }

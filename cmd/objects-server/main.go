@@ -10,8 +10,14 @@ type ObjectServer struct {
 }
 
 func (t ObjectServer) AddNewObject(ctx echo.Context) error {
-	object, _ := objects.GetAllObjects()
-	return ctx.JSON(http.StatusOK, object)
+	o := &objects.NewObject{}
+
+	if err := ctx.Bind(o); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	err := objects.CreateObject(o)
+	return ctx.JSON(http.StatusCreated, err)
 }
 
 func (t ObjectServer) FindObjectByID(ctx echo.Context, id int64) error {
