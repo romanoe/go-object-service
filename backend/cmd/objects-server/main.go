@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"net/http"
 	"object-service/internal/objects"
 )
@@ -33,6 +34,13 @@ func (t ObjectServer) FindObjects(ctx echo.Context) error {
 func NewServer() *echo.Echo {
 	// New router
 	e := echo.New()
+
+	// Allow CORS
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
+
 	// Register handlers (Router, Server interface)
 	objects.RegisterHandlers(e, ObjectServer{})
 

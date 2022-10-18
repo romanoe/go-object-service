@@ -15,5 +15,11 @@
 # vendor/
 
 # Intelliji
+*/.idea
 .idea
 
+
+# Node modules
+frontend/node_modules
+frontend/.vscode
+frontend/package-lock.json
