@@ -1,8 +1,10 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"log"
 	"net/http"
 	"object-service/internal/objects"
 )
@@ -12,7 +14,6 @@ type ObjectServer struct {
 
 func (t ObjectServer) AddNewObject(ctx echo.Context) error {
 	o := &objects.NewObject{}
-
 	if err := ctx.Bind(o); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -24,6 +25,11 @@ func (t ObjectServer) AddNewObject(ctx echo.Context) error {
 func (t ObjectServer) FindObjectByID(ctx echo.Context, id int64) error {
 	object, _ := objects.GetObjectById(id)
 	return ctx.JSON(http.StatusOK, object)
+}
+
+func (t ObjectServer) DeleteObjectByID(ctx echo.Context, id int64) error {
+	deletedId, _ := objects.DeleteObjectById(id)
+	return ctx.JSON(http.StatusOK, deletedId)
 }
 
 func (t ObjectServer) FindObjects(ctx echo.Context) error {
@@ -48,6 +54,11 @@ func NewServer() *echo.Echo {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	server := NewServer()
 	server.Logger.Fatal(server.Start(":1323"))
 }

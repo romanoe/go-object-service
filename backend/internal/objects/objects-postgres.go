@@ -2,20 +2,12 @@ package objects
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"os"
 	"time"
-)
-
-// DB connection details
-const (
-	DbHost      = "127.0.0.1"
-	DbPort      = "5432"
-	DbName      = "objects"
-	DbUser      = "postgres"
-	DbPassword  = "postgres"
-	DatabaseUrl = "postgres://" + DbUser + ":" + DbPassword + "@" + DbHost + ":" + DbPort + "/" + DbName
 )
 
 // SQL queries
@@ -24,15 +16,27 @@ const (
 	getObjectById = "SELECT * FROM objects WHERE id=$1;"
 	createObject  = "INSERT INTO objects (id, created_at, type) VALUES ($1, $2, $3) RETURNING id;"
 	getMaxid      = "SELECT MAX(id) FROM objects;"
+	deleteById    = "DELETE FROM objects WHERE id=$1 RETURNING id;"
 )
+
+var pgErr *pgconn.PgError
 
 // Database
 func SetConnection() (*pgxpool.Pool, error) {
-	// Open and (defer) close connection
+	DbHost := os.Getenv("DBHOST")
+	DbPort := os.Getenv("DBPORT")
+	DbName := os.Getenv("DBNAME")
+	DbUser := os.Getenv("DBUSER")
+	DbPassword := os.Getenv("DBPASSWORD")
+	DatabaseUrl := "postgres://" + DbUser + ":" + DbPassword + "@" + DbHost + ":" + DbPort + "/" + DbName
+
+	// Open connection
 	connPool, err := pgxpool.New(context.Background(), DatabaseUrl)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message) // => syntax error at end of input
+			fmt.Println(pgErr.Code)    // => 42601
+		}
 	}
 
 	fmt.Println("Setting connection to Postgresql")
@@ -53,8 +57,10 @@ func GetAllObjects() ([]*Object, error) {
 	rows, err := conn.Query(context.Background(), getAllObjects)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message) // => syntax error at end of input
+			fmt.Println(pgErr.Code)    // => 42601
+		}
 	}
 
 	for rows.Next() {
@@ -75,8 +81,10 @@ func GetObjectById(id int64) (*Object, error) {
 	defer conn.Close()
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message) // => syntax error at end of input
+			fmt.Println(pgErr.Code)    // => 42601
+		}
 	}
 
 	// Initialize object
@@ -87,11 +95,40 @@ func GetObjectById(id int64) (*Object, error) {
 	err = conn.QueryRow(context.Background(), getObjectById, id).Scan(&object.CreatedAt, &object.Type, &object.Id)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message) // => syntax error at end of input
+			fmt.Println(pgErr.Code)    // => 42601
+		}
 	}
 
 	return object, err
+}
+
+func DeleteObjectById(id int64) (int64, error) {
+	// Set connection and (defer) close
+	conn, err := SetConnection()
+	defer conn.Close()
+
+	if err != nil {
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message)
+			fmt.Println(pgErr.Code)
+		}
+	}
+
+	// Executing query
+	fmt.Printf("Executing query %s \n", deleteById)
+	var deletedId int64
+	err = conn.QueryRow(context.Background(), deleteById, id).Scan(&deletedId)
+
+	if err != nil {
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message) // => syntax error at end of input
+			fmt.Println(pgErr.Code)    // => 42601
+		}
+	}
+
+	return deletedId, nil
 }
 
 func CreateObject(o *NewObject) error {
@@ -105,8 +142,10 @@ func CreateObject(o *NewObject) error {
 	maxId := lastId + 1
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Getting max id failed: %v\n", err)
-		os.Exit(1)
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message)
+			fmt.Println(pgErr.Code)
+		}
 	}
 
 	// Date time (created_at)
@@ -130,8 +169,10 @@ func CreateObject(o *NewObject) error {
 	err = conn.QueryRow(context.Background(), createObject, &object.Id, &object.CreatedAt, &object.Type).Scan(&lastId)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Inserting new object with id %d failed: %v\n", lastId, err)
-		os.Exit(1)
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message) // => syntax error at end of input
+			fmt.Println(pgErr.Code)    // => 42601
+		}
 	}
 
 	return err
