@@ -15,7 +15,6 @@ const (
 	getAllObjects = "SELECT * FROM objects;"
 	getObjectById = "SELECT * FROM objects WHERE id=$1;"
 	createObject  = "INSERT INTO objects (id, created_at, type) VALUES ($1, $2, $3) RETURNING id;"
-	getMaxid      = "SELECT MAX(id) FROM objects;"
 	deleteById    = "DELETE FROM objects WHERE id=$1 RETURNING id;"
 )
 
@@ -32,10 +31,12 @@ func SetConnection() (*pgxpool.Pool, error) {
 
 	// Open connection
 	connPool, err := pgxpool.New(context.Background(), DatabaseUrl)
+
+	// Handle pgx error
 	if err != nil {
 		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Message) // => syntax error at end of input
-			fmt.Println(pgErr.Code)    // => 42601
+			fmt.Println(pgErr.Message)
+			fmt.Println(pgErr.Code)
 		}
 	}
 
@@ -43,12 +44,7 @@ func SetConnection() (*pgxpool.Pool, error) {
 	return connPool, nil
 }
 
-func GetAllObjects() ([]*Object, error) {
-
-	// Set connection and (defer) close
-	conn, err := SetConnection()
-	defer conn.Close()
-
+func GetAllObjects(conn *pgxpool.Pool) ([]*Object, error) {
 	// Initialize object and objects
 	var objects []*Object
 
@@ -75,39 +71,13 @@ func GetAllObjects() ([]*Object, error) {
 	return objects, err
 }
 
-func GetObjectById(id int64) (*Object, error) {
-	// Set connection and (defer) close
-	conn, err := SetConnection()
-	defer conn.Close()
-
-	if err != nil {
-		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Message) // => syntax error at end of input
-			fmt.Println(pgErr.Code)    // => 42601
-		}
-	}
-
+func GetObjectById(conn *pgxpool.Pool, id int64) (*Object, error) {
 	// Initialize object
 	var object = new(Object)
 
 	// Executing query
 	fmt.Printf("Executing query %s \n", getObjectById)
-	err = conn.QueryRow(context.Background(), getObjectById, id).Scan(&object.CreatedAt, &object.Type, &object.Id)
-
-	if err != nil {
-		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Message) // => syntax error at end of input
-			fmt.Println(pgErr.Code)    // => 42601
-		}
-	}
-
-	return object, err
-}
-
-func DeleteObjectById(id int64) (int64, error) {
-	// Set connection and (defer) close
-	conn, err := SetConnection()
-	defer conn.Close()
+	err := conn.QueryRow(context.Background(), getObjectById, id).Scan(&object.CreatedAt, &object.Type, &object.Id)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {
@@ -115,39 +85,26 @@ func DeleteObjectById(id int64) (int64, error) {
 			fmt.Println(pgErr.Code)
 		}
 	}
+	return object, err
+}
 
+func DeleteObjectById(conn *pgxpool.Pool, id int64) (int64, error) {
 	// Executing query
 	fmt.Printf("Executing query %s \n", deleteById)
 	var deletedId int64
-	err = conn.QueryRow(context.Background(), deleteById, id).Scan(&deletedId)
+	err := conn.QueryRow(context.Background(), deleteById, id).Scan(&deletedId)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Message) // => syntax error at end of input
-			fmt.Println(pgErr.Code)    // => 42601
+			fmt.Println(pgErr.Message)
+			fmt.Println(pgErr.Code)
 		}
 	}
 
 	return deletedId, nil
 }
 
-func CreateObject(o *NewObject) error {
-	// Set connection and (defer) close
-	conn, err := SetConnection()
-	defer conn.Close()
-
-	// Get max id (id)
-	var lastId int64
-	err = conn.QueryRow(context.Background(), getMaxid).Scan(&lastId)
-	maxId := lastId + 1
-
-	if err != nil {
-		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Message)
-			fmt.Println(pgErr.Code)
-		}
-	}
-
+func CreateObject(conn *pgxpool.Pool, o *Object) (int64, error) {
 	// Date time (created_at)
 	now := time.Now()
 
@@ -160,20 +117,21 @@ func CreateObject(o *NewObject) error {
 	// Create object
 	var object = Object{
 		CreatedAt: now,
-		Id:        maxId,
+		Id:        0,
 		Type:      objectType,
 	}
 
 	// Executing query
+	var lastId int64
 	fmt.Printf("Executing query %s \n", createObject)
-	err = conn.QueryRow(context.Background(), createObject, &object.Id, &object.CreatedAt, &object.Type).Scan(&lastId)
+	err := conn.QueryRow(context.Background(), createObject, &object.Id, &object.CreatedAt, &object.Type).Scan(&lastId)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Message) // => syntax error at end of input
-			fmt.Println(pgErr.Code)    // => 42601
+			fmt.Println(pgErr.Message)
+			fmt.Println(pgErr.Code)
 		}
 	}
 
-	return err
+	return lastId, err
 }

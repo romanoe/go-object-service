@@ -76,26 +76,21 @@ components:
   schemas:
     Object:
       allOf:
-        - $ref: '#/components/schemas/NewObject'
         - required:
           - id
+          - type
+          - created_at
           properties:
             id:
               type: integer
               format: int64
               description: Object's unique ID
-    NewObject:
-      required:
-        - type
-        - created_at
-      properties:
-        type:
-          type: string
-          description: Object's type
-        created_at:
-          type: string
-          format: date-time
-          description: Object's creation date
-
+            type:
+              type: string
+              description: Object's type
+            created_at:
+              type: string
+              format: date-time
+              description: Object's creation date
 
 

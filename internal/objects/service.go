@@ -1,43 +1,42 @@
-package main
+package objects
 
 import (
-	"github.com/joho/godotenv"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"log"
 	"net/http"
-	"object-service/internal/objects"
 )
 
 type ObjectServer struct {
+	PgConn *pgxpool.Pool
 }
 
 func (t ObjectServer) AddNewObject(ctx echo.Context) error {
-	o := &objects.NewObject{}
+	o := &Object{}
 	if err := ctx.Bind(o); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 
-	err := objects.CreateObject(o)
-	return ctx.JSON(http.StatusCreated, err)
+	createdId, _ := CreateObject(t.PgConn, o)
+	return ctx.JSON(http.StatusCreated, createdId)
 }
 
 func (t ObjectServer) FindObjectByID(ctx echo.Context, id int64) error {
-	object, _ := objects.GetObjectById(id)
+	object, _ := GetObjectById(t.PgConn, id)
 	return ctx.JSON(http.StatusOK, object)
 }
 
 func (t ObjectServer) DeleteObjectByID(ctx echo.Context, id int64) error {
-	deletedId, _ := objects.DeleteObjectById(id)
+	deletedId, _ := DeleteObjectById(t.PgConn, id)
 	return ctx.JSON(http.StatusOK, deletedId)
 }
 
 func (t ObjectServer) FindObjects(ctx echo.Context) error {
-	objects, _ := objects.GetAllObjects()
+	objects, _ := GetAllObjects(t.PgConn)
 	return ctx.JSON(http.StatusOK, objects)
 }
 
-func NewServer() *echo.Echo {
+func NewServer(pool *pgxpool.Pool) *echo.Echo {
 	// New router
 	e := echo.New()
 
@@ -47,18 +46,12 @@ func NewServer() *echo.Echo {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
+	// Initialize ObjectServer
+	objectServer := ObjectServer{PgConn: pool}
+
 	// Register handlers (Router, Server interface)
-	objects.RegisterHandlers(e, ObjectServer{})
+	RegisterHandlers(e, objectServer)
+	e.Logger.Fatal(e.Start(":1323"))
 
 	return e
-}
-
-func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	server := NewServer()
-	server.Logger.Fatal(server.Start(":1323"))
 }

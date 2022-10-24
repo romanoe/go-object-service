@@ -7,15 +7,6 @@ import (
 	"time"
 )
 
-// NewObject defines model for NewObject.
-type NewObject struct {
-	// Object's creation date
-	CreatedAt time.Time `json:"created_at"`
-
-	// Object's type
-	Type string `json:"type"`
-}
-
 // Object defines model for Object.
 type Object struct {
 	// Object's creation date
