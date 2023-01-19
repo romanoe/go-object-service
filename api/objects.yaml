@@ -86,8 +86,8 @@ components:
               format: int64
               description: Object's unique ID
             type:
-              type: string
-              description: Object's type
+              type: integer
+              description: Object's type ID
             created_at:
               type: string
               format: date-time
