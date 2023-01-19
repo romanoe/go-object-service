@@ -2,6 +2,5 @@ package: objects
 generate:
   echo-server: true
   client: true
-  models: true
   embedded-spec: true
 output: internal/objects/object-server.gen.go

@@ -78,14 +78,17 @@ components:
       allOf:
         - required:
           - id
-          - type
+          - fk_type
           - created_at
           properties:
             id:
               type: integer
               format: int64
               description: Object's unique ID
-            type:
+            type_value:
+              type: string
+              description: Object's type name
+            fk_type:
               type: integer
               description: Object's type ID
             created_at:

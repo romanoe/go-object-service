@@ -12,9 +12,9 @@ import (
 
 // SQL queries
 const (
-	getAllObjects = "SELECT id, type, created_at FROM objects.object;"
-	getObjectById = "SELECT id, type, created_at FROM objects.object WHERE id=$1;"
-	createObject  = "INSERT INTO objects.object (type, created_at) VALUES ($1, $2) RETURNING id;"
+	getAllObjects = "SELECT o.id, t.value, o.created_at FROM objects.object o left join objects.object_type t on o.fk_type = t.id;"
+	getObjectById = "SELECT  o.id, t.value, o.created_at FROM objects.object o left join objects.object_type t on o.fk_type = t.id WHERE o.id=$1;"
+	createObject  = "INSERT INTO objects.object (fk_type, created_at) VALUES ($1, $2) RETURNING id;"
 	deleteById    = "DELETE FROM objects.object WHERE id=$1 RETURNING id;"
 )
 
@@ -44,7 +44,7 @@ func SetConnection() (*pgxpool.Pool, error) {
 	return connPool, nil
 }
 
-//curl -H "Content-Type: application/json" http://localhost:1323/objects
+// curl -H "Content-Type: application/json" http://localhost:1323/objects
 func GetAllObjects(conn *pgxpool.Pool) ([]*Object, error) {
 	// Initialize object and objects
 	var objects []*Object
@@ -63,7 +63,7 @@ func GetAllObjects(conn *pgxpool.Pool) ([]*Object, error) {
 	for rows.Next() {
 		var object = new(Object)
 
-		err := rows.Scan(&object.CreatedAt, &object.Type, &object.Id)
+		err := rows.Scan(&object.Id, &object.TypeValue, &object.CreatedAt)
 		if err != nil {
 			panic(err)
 		}
@@ -79,7 +79,7 @@ func GetObjectById(conn *pgxpool.Pool, id int64) (*Object, error) {
 
 	// Executing query
 	fmt.Printf("Executing query %s \n", getObjectById)
-	err := conn.QueryRow(context.Background(), getObjectById, id).Scan(&object.CreatedAt, &object.Type, &object.Id)
+	err := conn.QueryRow(context.Background(), getObjectById, id).Scan(&object.Id, &object.TypeValue, &object.CreatedAt)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {
@@ -90,6 +90,7 @@ func GetObjectById(conn *pgxpool.Pool, id int64) (*Object, error) {
 	return object, err
 }
 
+// curl -v -XDELETE -H "Content-Type: application/json" 'http://localhost:1323/objects/1'
 func DeleteObjectById(conn *pgxpool.Pool, id int64) (int64, error) {
 	// Executing query
 	fmt.Printf("Executing query %s \n", deleteById)
@@ -106,24 +107,25 @@ func DeleteObjectById(conn *pgxpool.Pool, id int64) (int64, error) {
 	return deletedId, nil
 }
 
-// curl -XPOST -H "Content-Type: application/json" -d '{"type":"1"}' http://localhost:1323/object
+// curl -XPOST -H "Content-Type: application/json" -d '{"fk_type": 1 }' http://localhost:1323/objects
 func CreateObject(conn *pgxpool.Pool, o *Object) (int64, error) {
 	// Date time (created_at)
 	now := time.Now()
 
-	objectType := o.Type
+	objectType := o.FkType
 
 	// Create object
 	var object = Object{
 		Id:        0,
-		Type:      objectType,
+		TypeValue: nil,
+		FkType:    objectType,
 		CreatedAt: now,
 	}
 
 	// Executing query
 	var lastId int64
 	fmt.Printf("Executing query %s \n", createObject)
-	err := conn.QueryRow(context.Background(), createObject, &object.Type, &object.CreatedAt).Scan(&lastId)
+	err := conn.QueryRow(context.Background(), createObject, &object.FkType, &object.CreatedAt).Scan(&lastId)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {
@@ -131,6 +133,5 @@ func CreateObject(conn *pgxpool.Pool, o *Object) (int64, error) {
 			fmt.Println(pgErr.Code)
 		}
 	}
-
 	return lastId, err
 }

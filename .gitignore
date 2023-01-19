@@ -19,8 +19,3 @@
 .idea
 
 
-# Node modules
-frontend/node_modules
-frontend/.vscode
-frontend/package-lock.json
-.env

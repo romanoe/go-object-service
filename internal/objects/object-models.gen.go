@@ -12,9 +12,12 @@ type Object struct {
 	// CreatedAt Object's creation date
 	CreatedAt time.Time `json:"created_at"`
 
+	// FkType Object's type ID
+	FkType int `json:"fk_type"`
+
 	// Id Object's unique ID
 	Id int64 `json:"id"`
 
-	// Type Object's type ID
-	Type int `json:"type"`
+	// TypeValue Object's type name
+	TypeValue *string `json:"type_value,omitempty"`
 }
