@@ -12,10 +12,10 @@ import (
 
 // SQL queries
 const (
-	getAllObjects = "SELECT * FROM objects;"
-	getObjectById = "SELECT * FROM objects WHERE id=$1;"
-	createObject  = "INSERT INTO objects (id, created_at, type) VALUES ($1, $2, $3) RETURNING id;"
-	deleteById    = "DELETE FROM objects WHERE id=$1 RETURNING id;"
+	getAllObjects = "SELECT id, type, created_at FROM objects.object;"
+	getObjectById = "SELECT id, type, created_at FROM objects.object WHERE id=$1;"
+	createObject  = "INSERT INTO objects.object (type, created_at) VALUES ($1, $2) RETURNING id;"
+	deleteById    = "DELETE FROM objects.object WHERE id=$1 RETURNING id;"
 )
 
 var pgErr *pgconn.PgError
@@ -44,6 +44,7 @@ func SetConnection() (*pgxpool.Pool, error) {
 	return connPool, nil
 }
 
+//curl -H "Content-Type: application/json" http://localhost:1323/objects
 func GetAllObjects(conn *pgxpool.Pool) ([]*Object, error) {
 	// Initialize object and objects
 	var objects []*Object
@@ -71,6 +72,7 @@ func GetAllObjects(conn *pgxpool.Pool) ([]*Object, error) {
 	return objects, err
 }
 
+// curl -H "Content-Type: application/json" http://localhost:1323/objects/1
 func GetObjectById(conn *pgxpool.Pool, id int64) (*Object, error) {
 	// Initialize object
 	var object = new(Object)
@@ -104,27 +106,24 @@ func DeleteObjectById(conn *pgxpool.Pool, id int64) (int64, error) {
 	return deletedId, nil
 }
 
+// curl -XPOST -H "Content-Type: application/json" -d '{"type":"1"}' http://localhost:1323/object
 func CreateObject(conn *pgxpool.Pool, o *Object) (int64, error) {
 	// Date time (created_at)
 	now := time.Now()
 
-	// Type (Arbre, Antenne etc.)
-	if o.Type == "" {
-		o.Type = "Undefined"
-	}
 	objectType := o.Type
 
 	// Create object
 	var object = Object{
-		CreatedAt: now,
 		Id:        0,
 		Type:      objectType,
+		CreatedAt: now,
 	}
 
 	// Executing query
 	var lastId int64
 	fmt.Printf("Executing query %s \n", createObject)
-	err := conn.QueryRow(context.Background(), createObject, &object.Id, &object.CreatedAt, &object.Type).Scan(&lastId)
+	err := conn.QueryRow(context.Background(), createObject, &object.Type, &object.CreatedAt).Scan(&lastId)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {

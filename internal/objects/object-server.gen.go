@@ -15,24 +15,11 @@ import (
 	"net/url"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
 )
-
-// Object defines model for Object.
-type Object struct {
-	// CreatedAt Object's creation date
-	CreatedAt time.Time `json:"created_at"`
-
-	// Id Object's unique ID
-	Id int64 `json:"id"`
-
-	// Type Object's type ID
-	Type int `json:"type"`
-}
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
