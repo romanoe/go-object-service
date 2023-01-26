@@ -100,6 +100,12 @@ type ClientInterface interface {
 	// AddNewObject request
 	AddNewObject(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// FindObjectsTypes request
+	FindObjectsTypes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddNewObjectType request
+	AddNewObjectType(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DeleteObjectByID request
 	DeleteObjectByID(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -121,6 +127,30 @@ func (c *Client) FindObjects(ctx context.Context, reqEditors ...RequestEditorFn)
 
 func (c *Client) AddNewObject(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewAddNewObjectRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) FindObjectsTypes(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFindObjectsTypesRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddNewObjectType(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddNewObjectTypeRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +222,60 @@ func NewAddNewObjectRequest(server string) (*http.Request, error) {
 	}
 
 	operationPath := fmt.Sprintf("/objects")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewFindObjectsTypesRequest generates requests for FindObjectsTypes
+func NewFindObjectsTypesRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/objects/types")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddNewObjectTypeRequest generates requests for AddNewObjectType
+func NewAddNewObjectTypeRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/objects/types")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -326,6 +410,12 @@ type ClientWithResponsesInterface interface {
 	// AddNewObject request
 	AddNewObjectWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AddNewObjectResponse, error)
 
+	// FindObjectsTypes request
+	FindObjectsTypesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FindObjectsTypesResponse, error)
+
+	// AddNewObjectType request
+	AddNewObjectTypeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AddNewObjectTypeResponse, error)
+
 	// DeleteObjectByID request
 	DeleteObjectByIDWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeleteObjectByIDResponse, error)
 
@@ -371,6 +461,50 @@ func (r AddNewObjectResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r AddNewObjectResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type FindObjectsTypesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]Object
+}
+
+// Status returns HTTPResponse.Status
+func (r FindObjectsTypesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FindObjectsTypesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AddNewObjectTypeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *[]ObjectType
+}
+
+// Status returns HTTPResponse.Status
+func (r AddNewObjectTypeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddNewObjectTypeResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -436,6 +570,24 @@ func (c *ClientWithResponses) AddNewObjectWithResponse(ctx context.Context, reqE
 		return nil, err
 	}
 	return ParseAddNewObjectResponse(rsp)
+}
+
+// FindObjectsTypesWithResponse request returning *FindObjectsTypesResponse
+func (c *ClientWithResponses) FindObjectsTypesWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*FindObjectsTypesResponse, error) {
+	rsp, err := c.FindObjectsTypes(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFindObjectsTypesResponse(rsp)
+}
+
+// AddNewObjectTypeWithResponse request returning *AddNewObjectTypeResponse
+func (c *ClientWithResponses) AddNewObjectTypeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*AddNewObjectTypeResponse, error) {
+	rsp, err := c.AddNewObjectType(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddNewObjectTypeResponse(rsp)
 }
 
 // DeleteObjectByIDWithResponse request returning *DeleteObjectByIDResponse
@@ -508,6 +660,58 @@ func ParseAddNewObjectResponse(rsp *http.Response) (*AddNewObjectResponse, error
 	return response, nil
 }
 
+// ParseFindObjectsTypesResponse parses an HTTP response from a FindObjectsTypesWithResponse call
+func ParseFindObjectsTypesResponse(rsp *http.Response) (*FindObjectsTypesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FindObjectsTypesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []Object
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddNewObjectTypeResponse parses an HTTP response from a AddNewObjectTypeWithResponse call
+func ParseAddNewObjectTypeResponse(rsp *http.Response) (*AddNewObjectTypeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddNewObjectTypeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest []ObjectType
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDeleteObjectByIDResponse parses an HTTP response from a DeleteObjectByIDWithResponse call
 func ParseDeleteObjectByIDResponse(rsp *http.Response) (*DeleteObjectByIDResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -558,6 +762,12 @@ type ServerInterface interface {
 	// Add a new object
 	// (POST /objects)
 	AddNewObject(ctx echo.Context) error
+	// Return all objects' types
+	// (GET /objects/types)
+	FindObjectsTypes(ctx echo.Context) error
+	// Add a new object type
+	// (POST /objects/types)
+	AddNewObjectType(ctx echo.Context) error
 	// Delete object
 	// (DELETE /objects/{id})
 	DeleteObjectByID(ctx echo.Context, id int64) error
@@ -586,6 +796,24 @@ func (w *ServerInterfaceWrapper) AddNewObject(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.AddNewObject(ctx)
+	return err
+}
+
+// FindObjectsTypes converts echo context to params.
+func (w *ServerInterfaceWrapper) FindObjectsTypes(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.FindObjectsTypes(ctx)
+	return err
+}
+
+// AddNewObjectType converts echo context to params.
+func (w *ServerInterfaceWrapper) AddNewObjectType(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.AddNewObjectType(ctx)
 	return err
 }
 
@@ -651,6 +879,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.GET(baseURL+"/objects", wrapper.FindObjects)
 	router.POST(baseURL+"/objects", wrapper.AddNewObject)
+	router.GET(baseURL+"/objects/types", wrapper.FindObjectsTypes)
+	router.POST(baseURL+"/objects/types", wrapper.AddNewObjectType)
 	router.DELETE(baseURL+"/objects/:id", wrapper.DeleteObjectByID)
 	router.GET(baseURL+"/objects/:id", wrapper.FindObjectByID)
 
@@ -659,17 +889,20 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"AA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

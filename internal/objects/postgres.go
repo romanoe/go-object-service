@@ -12,10 +12,12 @@ import (
 
 // SQL queries
 const (
-	getAllObjects = "SELECT o.id, t.value, o.created_at FROM objects.object o left join objects.object_type t on o.fk_type = t.id;"
-	getObjectById = "SELECT  o.id, t.value, o.created_at FROM objects.object o left join objects.object_type t on o.fk_type = t.id WHERE o.id=$1;"
-	createObject  = "INSERT INTO objects.object (fk_type, created_at) VALUES ($1, $2) RETURNING id;"
-	deleteById    = "DELETE FROM objects.object WHERE id=$1 RETURNING id;"
+	getAllObjects    = "SELECT id, fk_type , created_at FROM objects.object;"
+	getObjectById    = "SELECT  id, fk_type , created_at FROM objects.object1;"
+	createObject     = "INSERT INTO objects.object (fk_type, created_at) VALUES ($1, $2) RETURNING id;"
+	deleteById       = "DELETE FROM objects.object WHERE id=$1 RETURNING id;"
+	getObjectTypes   = "SELECT id, value, is_active from objects.object_type;"
+	createObjectType = "INSERT INTO objects.object_type (value, is_active) VALUES ($1, $2) RETURNING id;"
 )
 
 var pgErr *pgconn.PgError
@@ -63,7 +65,7 @@ func GetAllObjects(conn *pgxpool.Pool) ([]*Object, error) {
 	for rows.Next() {
 		var object = new(Object)
 
-		err := rows.Scan(&object.Id, &object.TypeValue, &object.CreatedAt)
+		err := rows.Scan(&object.Id, &object.FkType, &object.CreatedAt)
 		if err != nil {
 			panic(err)
 		}
@@ -79,7 +81,7 @@ func GetObjectById(conn *pgxpool.Pool, id int64) (*Object, error) {
 
 	// Executing query
 	fmt.Printf("Executing query %s \n", getObjectById)
-	err := conn.QueryRow(context.Background(), getObjectById, id).Scan(&object.Id, &object.TypeValue, &object.CreatedAt)
+	err := conn.QueryRow(context.Background(), getObjectById, id).Scan(&object.Id, &object.FkType, &object.CreatedAt)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {
@@ -117,7 +119,6 @@ func CreateObject(conn *pgxpool.Pool, o *Object) (int64, error) {
 	// Create object
 	var object = Object{
 		Id:        0,
-		TypeValue: nil,
 		FkType:    objectType,
 		CreatedAt: now,
 	}
@@ -126,6 +127,60 @@ func CreateObject(conn *pgxpool.Pool, o *Object) (int64, error) {
 	var lastId int64
 	fmt.Printf("Executing query %s \n", createObject)
 	err := conn.QueryRow(context.Background(), createObject, &object.FkType, &object.CreatedAt).Scan(&lastId)
+
+	if err != nil {
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message)
+			fmt.Println(pgErr.Code)
+		}
+	}
+	return lastId, err
+}
+
+// curl -H "Content-Type: application/json" http://localhost:1323/objects/types
+func GetObjectTypes(conn *pgxpool.Pool) ([]*ObjectType, error) {
+	// Initialize object and objects
+	var objectTypes []*ObjectType
+
+	// Execute query and add to object
+	fmt.Printf("Executing query %s \n", getObjectTypes)
+	rows, err := conn.Query(context.Background(), getObjectTypes)
+
+	if err != nil {
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Message) // => syntax error at end of input
+			fmt.Println(pgErr.Code)    // => 42601
+		}
+	}
+
+	for rows.Next() {
+		var objectType = new(ObjectType)
+
+		err := rows.Scan(&objectType.Id, &objectType.Value, &objectType.IsActive)
+		if err != nil {
+			panic(err)
+		}
+		objectTypes = append(objectTypes, objectType)
+	}
+	return objectTypes, err
+}
+
+// curl -XPOST -H "Content-Type: application/json" -d '{"value": "mur" }' http://localhost:1323/objects/types
+func CreateObjectType(conn *pgxpool.Pool, o *ObjectType) (int64, error) {
+
+	objectValue := o.Value
+
+	// Create object
+	var objectType = ObjectType{
+		Id:       0,
+		Value:    objectValue,
+		IsActive: true,
+	}
+
+	// Executing query
+	var lastId int64
+	fmt.Printf("Executing query %s \n", createObjectType)
+	err := conn.QueryRow(context.Background(), createObject, &objectType.Value, &objectType.IsActive).Scan(&lastId)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {

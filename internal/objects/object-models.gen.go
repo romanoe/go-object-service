@@ -13,11 +13,20 @@ type Object struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	// FkType Object's type ID
-	FkType int `json:"fk_type"`
+	FkType int64 `json:"fk_type"`
 
 	// Id Object's unique ID
 	Id int64 `json:"id"`
+}
 
-	// TypeValue Object's type name
-	TypeValue *string `json:"type_value,omitempty"`
+// ObjectType defines model for ObjectType.
+type ObjectType struct {
+	// Id Objects' type ID
+	Id int64 `json:"id"`
+
+	// IsActive Objects' type activation status
+	IsActive bool `json:"is_active"`
+
+	// Value Objects' type definition value
+	Value string `json:"value"`
 }

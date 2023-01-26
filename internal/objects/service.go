@@ -11,6 +11,21 @@ type ObjectServer struct {
 	PgConn *pgxpool.Pool
 }
 
+func (t ObjectServer) FindObjectsTypes(ctx echo.Context) error {
+	objectTypes, _ := GetObjectTypes(t.PgConn)
+	return ctx.JSON(http.StatusOK, objectTypes)
+}
+
+func (t ObjectServer) AddNewObjectType(ctx echo.Context) error {
+	o := &ObjectType{}
+	if err := ctx.Bind(o); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+
+	createdId, _ := CreateObjectType(t.PgConn, o)
+	return ctx.JSON(http.StatusCreated, createdId)
+}
+
 func (t ObjectServer) AddNewObject(ctx echo.Context) error {
 	o := &Object{}
 	if err := ctx.Bind(o); err != nil {
