@@ -1,5 +1,6 @@
 # .env
 .env
+ui/.env
 
 # Binaries for programs and plugins
 *.exe
