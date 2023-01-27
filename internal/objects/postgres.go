@@ -13,7 +13,7 @@ import (
 // SQL queries
 const (
 	getAllObjects    = "SELECT id, fk_type , created_at FROM objects.object;"
-	getObjectById    = "SELECT  id, fk_type , created_at FROM objects.object1;"
+	getObjectById    = "SELECT  id, fk_type , created_at FROM objects.object where id=$1;"
 	createObject     = "INSERT INTO objects.object (fk_type, created_at) VALUES ($1, $2) RETURNING id;"
 	deleteById       = "DELETE FROM objects.object WHERE id=$1 RETURNING id;"
 	getObjectTypes   = "SELECT id, value, is_active from objects.object_type;"
