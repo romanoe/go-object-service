@@ -180,7 +180,7 @@ func CreateObjectType(conn *pgxpool.Pool, o *ObjectType) (int64, error) {
 	// Executing query
 	var lastId int64
 	fmt.Printf("Executing query %s \n", createObjectType)
-	err := conn.QueryRow(context.Background(), createObject, &objectType.Value, &objectType.IsActive).Scan(&lastId)
+	err := conn.QueryRow(context.Background(), createObjectType, &objectType.Value, &objectType.IsActive).Scan(&lastId)
 
 	if err != nil {
 		if errors.As(err, &pgErr) {
