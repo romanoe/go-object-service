@@ -111,7 +111,7 @@ func DeleteObjectById(conn *pgxpool.Pool, id int64) (int64, error) {
 
 // curl -XPOST -H "Content-Type: application/json" -d '{"fk_type": 1 }' http://localhost:1323/objects
 func CreateObject(conn *pgxpool.Pool, o *Object) (int64, error) {
-	// Date time (created_at)
+
 	now := time.Now()
 
 	objectType := o.FkType

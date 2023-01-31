@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import ObjectsView from "@/components/ObjectsView.vue";
+import ObjectList from "@/components/ObjectList.vue";
+
 </script>
 
 <template>
   <header>
   </header>
-
-    <Suspense>
-      <objects-view></objects-view>
-    </Suspense>
-
+  <object-list></object-list>
 </template>
 
 <style scoped>

@@ -2,7 +2,7 @@
 <h1>Objets</h1>
   <ul>
     <li v-for="object in objects">
-      {{object.id}}
+      {{object.created_at}}
     </li>
   </ul>
 </template>
@@ -20,12 +20,13 @@ interface GoelandObject {
 
 const objects = ref<GoelandObject[]>([])
 
-async function getData() {
+async function fetchData() : Promise<GoelandObject[]> {
   const res = await fetch(import.meta.env.VITE_API_URL + '/objects');
   objects.value = await res.json();
+  return objects.value
 }
 
-getData();
+fetchData();
 </script>
 
 <style scoped>
