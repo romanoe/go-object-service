@@ -8,12 +8,7 @@ interface GoelandObject {
   id: number
 }
 
-const goelandObjects = ref<GoelandObject[] | null>([])
-const goelandObjectsError = ref(false)
-
-  const {hasError, data} = await useFetch<GoelandObject[]>(import.meta.env.VITE_API_URL + '/objects');
-  goelandObjects.value = data.value;
-  goelandObjectsError.value = hasError.value;
+  const {data} = await useFetch<GoelandObject[]>(import.meta.env.VITE_API_URL + '/objects');
 </script>
 
 
