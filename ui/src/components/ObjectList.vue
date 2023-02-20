@@ -1,34 +1,33 @@
-<template>
-<h1>Objets</h1>
-  <ul>
-    <li v-for="object in objects">
-      {{object.created_at}}
-    </li>
-  </ul>
-</template>
-
 <script lang="ts" setup>
-import {ref} from 'vue'
+import { useFetch } from "@/composables/FetchData";
+import { ref, defineAsyncComponent } from 'vue';
 
 interface GoelandObject {
-  created_at : Date;
-
-  fk_type : number;
-
+  created_at: Date;
+  fk_type: number;
   id: number
 }
 
-const objects = ref<GoelandObject[]>([])
+const goelandObjects = ref<GoelandObject[] | null>([])
+const goelandObjectsError = ref(false)
 
-async function fetchData() : Promise<GoelandObject[]> {
-  const res = await fetch(import.meta.env.VITE_API_URL + '/objects');
-  objects.value = await res.json();
-  return objects.value
-}
-
-fetchData();
+  const {hasError, data} = await useFetch<GoelandObject[]>(import.meta.env.VITE_API_URL + '/objects');
+  goelandObjects.value = data.value;
+  goelandObjectsError.value = hasError.value;
 </script>
 
-<style scoped>
 
-</style>
+
+  <template>
+
+
+    <h1>Objets</h1>
+    <ul>
+      <li v-for="object in data">
+        {{object.fk_type}}
+      </li>
+    </ul>
+
+
+  </template>
+

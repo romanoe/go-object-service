@@ -6,7 +6,9 @@ import ObjectList from "@/components/ObjectList.vue";
 <template>
   <header>
   </header>
+  <Suspense>
   <object-list></object-list>
+  </Suspense>
 </template>
 
 <style scoped>
