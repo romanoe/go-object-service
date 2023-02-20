@@ -1,4 +1,4 @@
-// Inspired by Create a Basic useFetch Hook in Vue.js (https://javascript.plainenglish.io/create-a-basic-usefetch-hook-in-vue-b3ff113872d7), Medium, March 2022
+// From Create a Basic useFetch Hook in Vue.js (https://javascript.plainenglish.io/create-a-basic-usefetch-hook-in-vue-b3ff113872d7), Medium, March 2022
 import {reactive, toRefs} from 'vue';
 
 interface State<T> {
