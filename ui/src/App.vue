@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import ObjectList from "@/components/ObjectList.vue";
+import GoelandObjectList from "@/components/GoelandObjectList.vue";
 
 </script>
+
+
 
 <template>
   <header>
   </header>
-  <Suspense>
-  <object-list></object-list>
+
+  <Suspense> 
+    <template #default>
+      <router-view></router-view>
+    </template>
+    <template #fallback>
+      Loading...
+    </template>
   </Suspense>
+
 </template>
 
 <style scoped>
