@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { useFetch } from "@/composables/FetchData";
-import {useRouter, useRoute} from 'vue-router'
+import {useRoute} from 'vue-router';
+import {ref, watch} from 'vue';
 
 interface GoelandObject {
   created_at: Date;
@@ -8,17 +9,17 @@ interface GoelandObject {
   id: string
 }
 
-  const url = import.meta.env.VITE_API_URL + '/objects'
+const route = useRoute(); 
+const url = import.meta.env.VITE_API_URL + '/objects/';
+const { data } = await useFetch<GoelandObject>(url + route.params.id);
 
-
-  const {data} = await useFetch<GoelandObject>(url + 5);
-
+ 
 </script>
 
 
 
 <template>
     <h1>Formulaire Objet</h1>
-
+    {{ data }}
 </template>
 

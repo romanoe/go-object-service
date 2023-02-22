@@ -11,7 +11,7 @@ import GoelandObjectList from "@/components/GoelandObjectList.vue";
 
   <Suspense> 
     <template #default>
-      <router-view></router-view>
+      <router-view :key="$route.fullPath" ></router-view>
     </template>
     <template #fallback>
       Loading...
